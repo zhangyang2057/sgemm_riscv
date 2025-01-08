@@ -1,6 +1,6 @@
 /*
  * --------------------------------------------------------------------------
- * BLISLAB 
+ * BLISLAB
  * --------------------------------------------------------------------------
  * Copyright (C) 2016, The University of Texas at Austin
  *
@@ -40,7 +40,7 @@
  *
  * Modification:
  *
- * 
+ *
  * */
 
 
@@ -74,7 +74,7 @@ void test_bl_sgemm(
         int m,
         int n,
         int k
-        ) 
+        )
 {
     int    i, j, p, nx;
     float *A, *B, *C, *C_ref;
@@ -101,7 +101,7 @@ void test_bl_sgemm(
     // Randonly generate points in [ 0, 1 ].
     for ( p = 0; p < k; p ++ ) {
         for ( i = 0; i < m; i ++ ) {
-            A( i, p ) = (float)( drand48() );	
+            A( i, p ) = (float)( drand48() );
         }
     }
     for ( j = 0; j < n; j ++ ) {
@@ -110,14 +110,12 @@ void test_bl_sgemm(
         }
     }
 
-    for ( j = 0; j < n; j ++ ) {
-        for ( i = 0; i < m; i ++ ) {
-            C_ref( i, j ) = (float)( 0.0 );	
-                C( i, j ) = (float)( 0.0 );	
-        }
-    }
-
     for ( i = 0; i < nrepeats; i ++ ) {
+        for ( j = 0; j < n; j ++ ) {
+            for ( p = 0; p < m; p ++ ) {
+                    C( p, j ) = (float)( 0.0 );
+            }
+        }
         bl_sgemm_beg = bl_clock();
         {
             bl_sgemm(
@@ -143,6 +141,11 @@ void test_bl_sgemm(
 
 #ifdef ERROR_TEST
     for ( i = 0; i < nrepeats; i ++ ) {
+        for ( j = 0; j < n; j ++ ) {
+            for ( p = 0; p < m; p ++ ) {
+                    C_ref( p, j ) = (float)( 0.0 );
+            }
+        }
         ref_beg = bl_clock();
         {
             bl_sgemm_ref(
@@ -179,7 +182,7 @@ void test_bl_sgemm(
     // Compute overall floating point operations.
     flops = ( m * n / ( 1000.0 * 1000.0 * 1000.0 ) ) * ( 2 * k );
 
-    printf( "%5d\t %5d\t %5d\t %5.3lf\t %5.3lf\n", 
+    printf( "%5d\t %5d\t %5d\t %5.3lf\t %5.3lf\n",
             m, n, k, flops / bl_sgemm_rectime, flops / ref_rectime );
 
     free( A     );
@@ -191,7 +194,7 @@ void test_bl_sgemm(
 int main( int argc, char *argv[] )
 {
     printf("%%m\t%%n\t%%k\t%%MY_GFLOPS\t%%REF_GFLOPS\n");
-    for(int i = 16; i <= 800; i += 4) {
+    for(int i = 32; i <= 800; i += 32) {
         test_bl_sgemm( i, i, i );
     }
 

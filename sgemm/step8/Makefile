@@ -1,11 +1,7 @@
 TARGET=test_bl_sgemm_step8
 
-#CROSS_COMPILE ?= riscv64-unknown-linux-gnu-
+CROSS_COMPILE ?= riscv64-unknown-linux-gnu-
 # CROSS_COMPILE ?=
-
-CCL := /home/zhaodongyu/toolchain/riscv/Xuantie-900-gcc-linux-5.10.4-glibc-x86_64-V2.6.1
-CTOOL := riscv64-unknown-linux-gnu-
-CROSS_COMPILE := ${CCL}/bin/${CTOOL}
 
 CC  = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
@@ -16,7 +12,7 @@ ifeq ($(CROSS_COMPILE),)
 CFLAGS = -$(COMPILER_OPT_LEVEL) -march=core-avx2 -fPIC -static
 LDLIBS = -lpthread -lm
 else
-CFLAGS = -$(COMPILER_OPT_LEVEL) -march=rv64gcv0p7_zfh_xtheadc -mabi=lp64d -mtune=c906 -static
+CFLAGS = -$(COMPILER_OPT_LEVEL) -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro -static
 LDLIBS = -lm
 endif
 

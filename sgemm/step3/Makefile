@@ -1,11 +1,7 @@
 TARGET=test_bl_sgemm_step3
 
-#CROSS_COMPILE ?= riscv64-unknown-linux-gnu-
+CROSS_COMPILE ?= riscv64-unknown-linux-gnu-
 # CROSS_COMPILE ?=
-
-CCL := /home/zhaodongyu/toolchain/riscv/Xuantie-900-gcc-linux-5.10.4-glibc-x86_64-V2.6.1
-CTOOL := riscv64-unknown-linux-gnu-
-CROSS_COMPILE := ${CCL}/bin/${CTOOL}
 
 CC  = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
@@ -23,7 +19,7 @@ endif
 COMMONDIR = ../common
 CFLAGS += -I$(COMMONDIR)
 
-ASM_SRC= 
+ASM_SRC=
 CC_SRC= my_sgemm.c \
         $(COMMONDIR)/test_bl_sgemm.c \
         $(COMMONDIR)/bl_sgemm_ref.c \

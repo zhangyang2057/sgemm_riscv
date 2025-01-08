@@ -113,10 +113,10 @@ RvvSgemm4x16:
     mv kt, k
     beqz mr, .end
 
-    vlw.v v16, (biasp)
-    vlw.v v20, (biasp)
-    vlw.v v24, (biasp)
-    vlw.v v28, (biasp)
+    vle32.v v16, (biasp)
+    vle32.v v20, (biasp)
+    vle32.v v24, (biasp)
+    vle32.v v28, (biasp)
     addi biasp, biasp, 64
     slti t6, kt, 4               # kt < 4, t6 = 1
     bnez t6, .k2_tail
@@ -142,7 +142,7 @@ RvvSgemm4x16:
     flw ft3, (ap3)
     addi ap3, ap3, 4
     // load 16 col B(B0, B1, B2, B3)
-    vlw.v v0, (bp0)
+    vle32.v v0, (bp0)
     addi bp0,bp0,64
 
     addi kt, kt, -4         # Decrement k counter
@@ -153,7 +153,7 @@ RvvSgemm4x16:
     addi kt, kt, -4         # Decrement k counter
     // first group of 16 fma, second group load
     vfmacc.vf v16,  ft0, v0
-    vlw.v v4, (bp0)         # b0'->v4
+    vle32.v v4, (bp0)         # b0'->v4
     flw fs4, 384(bp0)       # pre-load B
     addi bp0,bp0,64
     vfmacc.vf v20,  ft1, v0
@@ -170,7 +170,7 @@ RvvSgemm4x16:
     // second group of 16 fma, third group load
     slti t6, kt, 4              # kt < 4, t6 = 1
     vfmacc.vf v16,  ft4, v4
-    vlw.v v8, (bp0)         # b0'->v0
+    vle32.v v8, (bp0)         # b0'->v0
     flw fs5, 384(bp0)       # pre-load B
     addi bp0,bp0,64
     vfmacc.vf v20,  ft5, v4
@@ -186,7 +186,7 @@ RvvSgemm4x16:
     addi ap3, ap3, 4
     // third group of 16 fma, fourth group load
     vfmacc.vf v16,  ft0, v8
-    vlw.v v12, (bp0)         # b0'->v0
+    vle32.v v12, (bp0)         # b0'->v0
     flw fs6, 384(bp0)       # pre-load B
     addi bp0,bp0,64
     vfmacc.vf v20,  ft1, v8
@@ -202,7 +202,7 @@ RvvSgemm4x16:
     addi ap3, ap3, 4
     // fourth group of 16 fma, first group load
     vfmacc.vf v16,  ft4, v12
-    vlw.v v0, (bp0)         # b0'->v0
+    vle32.v v0, (bp0)         # b0'->v0
     flw fs7, 384(bp0)       # pre-load B
     addi bp0,bp0,64
     vfmacc.vf v20,  ft5, v12
@@ -226,7 +226,7 @@ RvvSgemm4x16:
 .k4_tail:
     // first group of 16 fma, second group load
     vfmacc.vf v16,  ft0, v0
-    vlw.v v4, (bp0)         # b0'->v4
+    vle32.v v4, (bp0)         # b0'->v4
     addi bp0,bp0,64
     vfmacc.vf v20,  ft1, v0
     flw ft4, (ap0)          # a0'->ft4
@@ -241,7 +241,7 @@ RvvSgemm4x16:
     addi ap3, ap3, 4
     // second group of 16 fma, third group load
     vfmacc.vf v16,  ft4, v4
-    vlw.v v8, (bp0)         # b0'->v0
+    vle32.v v8, (bp0)         # b0'->v0
     addi bp0,bp0,64
     vfmacc.vf v20,  ft5, v4
     flw ft0, (ap0)          # a0'->ft0
@@ -256,7 +256,7 @@ RvvSgemm4x16:
     addi ap3, ap3, 4
     // third group of 16 fma, fourth group load
     vfmacc.vf v16,  ft0, v8
-    vlw.v v12, (bp0)         # b0'->v0
+    vle32.v v12, (bp0)         # b0'->v0
     addi bp0,bp0,64
     vfmacc.vf v20,  ft1, v8
     flw ft4, (ap0)          # a0'->ft0
@@ -279,7 +279,7 @@ RvvSgemm4x16:
     bnez t6, .k1_tail
     flw ft0, (ap0)
     addi ap0, ap0, 4
-    vlw.v v0, (bp0)
+    vle32.v v0, (bp0)
     addi bp0,bp0,64
     flw ft1, (ap1)
     addi ap1, ap1, 4
@@ -289,7 +289,7 @@ RvvSgemm4x16:
     addi ap3, ap3, 4
     // first group of 16 fma, second group load
     vfmacc.vf v16,  ft0, v0
-    vlw.v v4, (bp0)         # b0'->v4
+    vle32.v v4, (bp0)         # b0'->v4
     addi bp0,bp0,64
     vfmacc.vf v20,  ft1, v0
     flw ft4, (ap0)          # a0'->ft4
@@ -312,7 +312,7 @@ RvvSgemm4x16:
     bnez t6, .store_tile
     flw ft0, (ap0)
     addi ap0, ap0, 4
-    vlw.v v0, (bp0)
+    vle32.v v0, (bp0)
     addi bp0,bp0,64
     flw ft1, (ap1)
     addi ap1, ap1, 4
@@ -326,16 +326,16 @@ RvvSgemm4x16:
     vfmacc.vf v28,  ft3, v0
 .store_tile:
     add cp0, cp0, cp_offset
-    vsw.v v16, (cp0)
+    vse32.v v16, (cp0)
     addi cp0, cp0, 64
 
-    vsw.v v20, (cp1)
+    vse32.v v20, (cp1)
     addi cp1, cp1, 64
 
-    vsw.v v24, (cp2)
+    vse32.v v24, (cp2)
     addi cp2, cp2, 64
 
-    vsw.v v28, (cp3)
+    vse32.v v28, (cp3)
     addi cp3, cp3, 64
     j .end
 

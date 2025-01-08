@@ -1,4 +1,4 @@
-TARGET=test_bl_sgemm_step1
+TARGET=test_bl_sgemm_step11
 
 CROSS_COMPILE ?= riscv64-unknown-linux-gnu-
 # CROSS_COMPILE ?=
@@ -19,7 +19,7 @@ endif
 COMMONDIR = ../common
 CFLAGS += -I$(COMMONDIR)
 
-ASM_SRC= 
+ASM_SRC=
 CC_SRC= my_sgemm.c \
         $(COMMONDIR)/test_bl_sgemm.c \
         $(COMMONDIR)/bl_sgemm_ref.c \

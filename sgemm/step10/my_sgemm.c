@@ -45,11 +45,15 @@
 
 
 #include <bl_sgemm.h>
+#if __riscv_vector
+#include <riscv_vector.h>
+#endif
 
+#if 0
 void bl_sgemm(
-    int    m,
-    int    n,
-    int    k,
+    int    M,
+    int    N,
+    int    K,
     float *A,
     int    lda,
     float *B,
@@ -58,23 +62,57 @@ void bl_sgemm(
     int    ldc        // ldc must also be aligned
 )
 {
-  int    i, j, p;
+    size_t vlmax = vsetvlmax_e32m1();
 
-  // Early return if possible
-  if ( m == 0 || n == 0 || k == 0 ) {
-    printf( "bl_sgemm(): early return\n" );
-    return;
-  }
+    for (int32_t m = 0; m < M; m++) {
+        for (int32_t n = 0; n < N; n++) {
+            const float *ptr_a = &A[m * K];
+            const float *ptr_b = &B[n];
+            vfloat32m1_t vec_s = vfmv_v_f_f32m1(0.f, vlmax);
+            vfloat32m1_t vec_zero = vfmv_v_f_f32m1(0.f, vlmax);
+            int k = K;
+            for (size_t vl = 0; k > 0; k -= vl) {
+                vl = vsetvl_e32m1(k);
+                vfloat32m1_t vec_a = vle32_v_f32m1(ptr_a, vl);
+                vfloat32m1_t vec_b = vlse32_v_f32m1(ptr_b, N * sizeof(float), vl);
+                ptr_a += vl;
+                ptr_b += vl * N;
+                vec_s = vfmacc_vv_f32m1(vec_s, vec_a, vec_b, vl);
+            }
 
-  for ( i = 0; i < m; i ++ ) {              // Start 2-th loop
-      for ( j = 0; j < n; j ++ ) {          // Start 1-nd loop
-        for ( p = 0; p < k; p ++ ) {        // Start 0-st loop
-
-              C( i, j ) += A( i, p ) * B( p, j ); //Each operand is a MACRO defined in bl_sgemm() function.
-
-          }                                 // End   0-th loop
-      }                                     // End   1-st loop
-  }                                         // End   2-nd loop
+            vfloat32m1_t vec_sum;
+            vec_sum = vfredosum_vs_f32m1_f32m1(vec_sum, vec_s, vec_zero, vlmax);
+            C[m * N + n]= vfmv_f_s_f32m1_f32(vec_sum);
+        }
+    }
 }
 
+#else
+void bl_sgemm(
+    int    M,
+    int    N,
+    int    K,
+    float *A,
+    int    lda,
+    float *B,
+    int    ldb,
+    float *C,        // must be aligned
+    int    ldc        // ldc must also be aligned
+)
+{
+    size_t vl;
+    for (int k = 0; k < K; k++) {
+        for (int m = 0; m < M; m++) {
+            float a = A[m*K + k];
+            for (int n = 0; n < N; n += vl) {
+                vl = vsetvl_e32m1(N - n);
+                vfloat32m1_t b = vle32_v_f32m1(&B[k*N + n], vl);
+                vfloat32m1_t c = vle32_v_f32m1(&C[m*N + n], vl);
+                c = vfmacc_vf_f32m1(c, a, b, vl);
+                vse32_v_f32m1(&C[m*N + n], c, vl);
+            }
+        }
+    }
+}
 
+#endif
