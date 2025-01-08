@@ -45,6 +45,58 @@
 
 
 #include <bl_sgemm.h>
+#if __riscv_vector
+#include <riscv_vector.h>
+#endif
+
+/************************************************************************
+ * reorder kernel matrix
+ ***********************************************************************/
+// vlen=128
+void shl_c908_reorder_kernel_n8_fp32(float *src, float *dst, int m, int k, int ldc)
+{
+    shl_rvv_reorder_kernel_n8_fp32(src, dst, m, k, ldc);
+}
+
+/************************************************************************
+ * reorder kernel matrix
+ ***********************************************************************/
+// vlen=128
+void shl_rvv_reorder_kernel_n8_fp32(float *a, float *sa, int m, int k, int ldx)
+{
+    int i = 0;
+    for (; i + 7 < m; i += 8) {
+        for (int j = 0; j < k; j++) {
+            float *in_ptr = a + j;
+            vfloat32m2_t _input = vlse32_v_f32m2(in_ptr, k * sizeof(float), 8);
+            vse32_v_f32m2(sa, _input, 8);
+            sa += 8;
+        }
+        a += 8 * k;
+    }
+    for (; i + 3 < m; i += 4) {
+        for (int j = 0; j < k; j++) {
+            float *in_ptr = a + j;
+            vfloat32m1_t _input = vlse32_v_f32m1(in_ptr, k * sizeof(float), 4);
+            vse32_v_f32m1(sa, _input, 4);
+            sa += 4;
+        }
+        a += 4 * k;
+    }
+    for (; i + 1 < m; i += 2) {
+        for (int j = 0; j < k; j++) {
+            float *in_ptr = a + j;
+            vfloat32m1_t _input = vlse32_v_f32m1(in_ptr, k * sizeof(float), 2);
+            vse32_v_f32m1(sa, _input, 2);
+            sa += 2;
+        }
+        a += 2 * k;
+    }
+    for (; i < m; i++) {
+        memcpy(sa, a, k * sizeof(float));
+    }
+}
+
 
 /************************************************************************
  * reorder input matrix
@@ -2061,9 +2113,12 @@ void bl_sgemm(
 #if 0
   shl_c908_gemm_8x12_fp32(C, A, B, NULL, m, k, n, ldc);
 #else
+  float *pa_reorder = (float *)calloc(1, m * k * sizeof(float));
   float *pb_reorder = (float *)calloc(1, k * n * sizeof(float));
+  shl_c908_reorder_kernel_n8_fp32(A, pa_reorder, m, k, lda);
   shl_c908_reorder_input_z12_fp32(B, pb_reorder, k, n, ldc);
-  shl_c908_gemm_8x12_fp32(C, A, pb_reorder, NULL, m, k, n, ldc);
+  shl_c908_gemm_8x12_fp32(C, pa_reorder, pb_reorder, NULL, m, k, n, ldc);
+  free(pa_reorder);
   free(pb_reorder);
 #endif
 }
